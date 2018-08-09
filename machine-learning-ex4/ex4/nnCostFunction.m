@@ -92,8 +92,8 @@ J = J + regularized_term;
 
 
 %% Compute the grad
-Delta_1 = size(Theta1);
-Delta_2 = size(Theta2);
+Delta_1 = zeros(size(Theta1));
+Delta_2 = zeros(size(Theta2));
 for i = 1:m
 
     delta_3 = a3(:,i) - y_vect(:,i);
