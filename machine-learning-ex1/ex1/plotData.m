@@ -16,8 +16,17 @@ figure; % open a new figure window
 %       appear as red crosses. Furthermore, you can make the
 %       markers larger by using plot(..., 'rx', 'MarkerSize', 10);
 
+n = size(y);
+for i = 1:n
+    if(1==y(i))
+        plot(x(i,1), x(i,2), 'kx', 'MarkerSize', 6); % Plot the data
+        hold on;
+    else
+        plot(x(i,1), x(i,2), 'yo', 'MarkerSize', 6);
+        hold on;
+    end
+end
 
-plot(x, y, 'rx', 'MarkerSize', 10); % Plot the data
 ylabel('Profit in $10,000s'); % Set the y?axis label
 xlabel('Population of City in 10,000s'); % Set the x?axis label
 title('Training Data')
