@@ -26,11 +26,9 @@ centroids = zeros(K, n);
 % Note: You can use a for-loop over the centroids to compute this.
 %
 
-ind = find(idx == 1)
-
-
-
-
+for i = 1:K
+    centroids(i,:) = (X' * (idx == i)) / sum(idx == i);
+end
 
 
 % =============================================================
