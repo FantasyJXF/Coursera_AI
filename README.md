@@ -1,8 +1,8 @@
-# Coursera_ML
-Machine Learning by NG
+# Machine Learning
 
 https://www.coursera.org/learn/machine-learning/home/welcome
 
+# Deep Learning
 
+https://www.coursera.org/learn/neural-networks-deep-learning/home/welcome
 
-还有很多不足，继续加油
