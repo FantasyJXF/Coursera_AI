@@ -1,3 +1,5 @@
 *.swp
 *.pyc
 .env/*
+# Jupyter Notebook
+.ipynb_checkpoints
