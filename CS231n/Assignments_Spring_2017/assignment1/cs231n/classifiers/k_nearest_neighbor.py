@@ -74,7 +74,7 @@ class KNearestNeighbor(object):
         # not use a loop over dimension.                                    #
         #####################################################################
         dists[i, j] = np.sqrt(np.sum(np.square(self.X_train[j] - X[i])))
-        pass
+        #pass
         #####################################################################
         #                       END OF YOUR CODE                            #
         #####################################################################
@@ -141,7 +141,7 @@ class KNearestNeighbor(object):
 
     Returns:
     - y: A numpy array of shape (num_test,) containing predicted labels for the
-      test data, where y[i] is the predicted label for the test point X[i].  
+      test data, where y_pred[i] is the predicted label for the test point X[i].  
     """
     num_test = dists.shape[0]
     y_pred = np.zeros(num_test)
@@ -155,8 +155,10 @@ class KNearestNeighbor(object):
       # testing point, and use self.y_train to find the labels of these       #
       # neighbors. Store these labels in closest_y.                           #
       # Hint: Look up the function numpy.argsort.                             #
+      # numpy.argsort函数返回的是数组值从小到大的索引值                             #
       #########################################################################
-      pass
+      #closest_y = self.y_train[np.argsort(dists[i])[:k]]
+      closest_y = self.y_train[np.argsort(dists[i])[0:k]].tolist()
       #########################################################################
       # TODO:                                                                 #
       # Now that you have found the labels of the k nearest neighbors, you    #
@@ -164,7 +166,9 @@ class KNearestNeighbor(object):
       # Store this label in y_pred[i]. Break ties by choosing the smaller     #
       # label.                                                                #
       #########################################################################
-      pass
+      #pass
+      #y_pred[i] = np.argmax(np.bincount(closest_y))
+      y_pred[i] = max(set(closest_y), key=closest_y.count)
       #########################################################################
       #                           END OF YOUR CODE                            # 
       #########################################################################
