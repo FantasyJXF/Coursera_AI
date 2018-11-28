@@ -1,7 +1,13 @@
+# -*- coding:utf-8 -*-
 import numpy as np
 from random import shuffle
 from past.builtins import xrange
 
+'''
+svm算法就是对于每一个样本，计算其他不正确分类与正确分类之间的差距，
+如果差距大于delta那就说明差距大，需要进行进一步优化，所以对于每个样本，
+把这些差距加起来，让他们尽量小，这个就是svm的核心思想。
+'''
 def svm_loss_naive(W, X, y, reg):
   """
   Structured SVM loss function, naive implementation (with loops).
@@ -28,13 +34,17 @@ def svm_loss_naive(W, X, y, reg):
   loss = 0.0
   for i in xrange(num_train):
     scores = X[i].dot(W)
+    scod
     correct_class_score = scores[y[i]]
     for j in xrange(num_classes):
       if j == y[i]:
         continue
       margin = scores[j] - correct_class_score + 1 # note delta = 1
+      margin_d  = 
       if margin > 0:
         loss += margin
+
+      dW[i,j] = loss / 
 
   # Right now the loss is a sum over all training examples, but we want it
   # to be an average instead so we divide by num_train.
