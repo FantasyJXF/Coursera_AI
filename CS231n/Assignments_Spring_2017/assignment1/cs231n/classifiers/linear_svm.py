@@ -34,24 +34,25 @@ def svm_loss_naive(W, X, y, reg):
   loss = 0.0
   for i in xrange(num_train):
     scores = X[i].dot(W)
-    scod
-    correct_class_score = scores[y[i]]
+    correct_class_score = scores[y[i]] # 计算得到第i个样本的真实分类的分数
     for j in xrange(num_classes):
       if j == y[i]:
         continue
+      # Multiclass SVM损失函数计算
+      # Li = sum(max(0, sj - si + 1))  while  j!=yi
       margin = scores[j] - correct_class_score + 1 # note delta = 1
-      margin_d  = 
       if margin > 0:
         loss += margin
-
-      dW[i,j] = loss / 
-
+        dW[:,j] += X[i,:]
+        dW[:,y[i]] += -X[i,:]  # y[i]是正确的类
   # Right now the loss is a sum over all training examples, but we want it
   # to be an average instead so we divide by num_train.
   loss /= num_train
+  dW /= num_train
 
   # Add regularization to the loss.
-  loss += reg * np.sum(W * W)
+  loss += 0.5 * reg * np.sum(W * W)
+  dW += reg * W
 
   #############################################################################
   # TODO:                                                                     #
@@ -80,6 +81,19 @@ def svm_loss_vectorized(W, X, y, reg):
   # Implement a vectorized version of the structured SVM loss, storing the    #
   # result in loss.                                                           #
   #############################################################################
+  scores = X.dot(W)        # N by C  样本数*类别数
+  num_train = X.shape[0]
+  #num_classes = W.shape[1]
+
+  # 从scores的第i行中取出y[i]对应的正确标签的分数, i = np.arrange(num_train)
+  scores_correct = scores[np.arange(num_train), y]    # 1*N 
+  scores_correct = np.reshape(scores_correct, (num_train, 1))  # N*1 每个样本的正确类别
+
+  margins = scores - scores_correct + 1.0     # N by C   计算scores矩阵中每一处的损失
+  margins[np.arange(num_train), y] = 0.0      # 将每个样本的正确类别损失置为0
+  margins[margins <= 0] = 0.0                 # max(0, x)
+  loss += np.sum(margins) / num_train         # 累加所有损失，取平均
+  loss += 0.5 * reg * np.sum(W * W)           # 正则
   pass
   #############################################################################
   #                             END OF YOUR CODE                              #
@@ -95,6 +109,10 @@ def svm_loss_vectorized(W, X, y, reg):
   # to reuse some of the intermediate values that you used to compute the     #
   # loss.                                                                     #
   #############################################################################
+  margins[margins > 0] = 1.0                  # max(0, x)  大于0的梯度计为1
+  row_sum = np.sum(margins, axis=1)           # N*1  每个样本累加
+  margins[np.arange(num_train), y] = -row_sum  # 类正确的位置 = -梯度累加
+  dW += np.dot(X.T, margins)/num_train + reg * W     # D by C
   pass
   #############################################################################
   #                             END OF YOUR CODE                              #

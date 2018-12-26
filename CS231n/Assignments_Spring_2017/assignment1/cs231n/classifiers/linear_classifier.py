@@ -34,25 +34,28 @@ class LinearClassifier(object):
     num_classes = np.max(y) + 1 # assume y takes values 0...K-1 where K is number of classes
     if self.W is None:
       # lazily initialize W
-      self.W = 0.001 * np.random.randn(dim, num_classes)
+      self.W = 0.001 * np.random.randn(dim, num_classes)  # D by C
 
     # Run stochastic gradient descent to optimize W
     loss_history = []
     for it in xrange(num_iters):
-      X_batch = None
-      y_batch = None
+      #X_batch = None
+      #y_batch = None
 
       #########################################################################
       # TODO:                                                                 #
       # Sample batch_size elements from the training data and their           #
       # corresponding labels to use in this round of gradient descent.        #
       # Store the data in X_batch and their corresponding labels in           #
-      # y_batch; after sampling X_batch should have shape (dim, batch_size)   #
+      # y_batch; after sampling X_batch should have shape (batch_size, dim)   #
       # and y_batch should have shape (batch_size,)                           #
       #                                                                       #
       # Hint: Use np.random.choice to generate indices. Sampling with         #
       # replacement is faster than sampling without replacement.              #
       #########################################################################
+      idxs = np.random.choice(num_train, batch_size, replace=False)
+      X_batch = X[idxs]
+      y_batch = y[idxs]
       pass
       #########################################################################
       #                       END OF YOUR CODE                                #
@@ -67,6 +70,7 @@ class LinearClassifier(object):
       # TODO:                                                                 #
       # Update the weights using the gradient and the learning rate.          #
       #########################################################################
+      self.W -= grad * learning_rate
       pass
       #########################################################################
       #                       END OF YOUR CODE                                #
@@ -96,6 +100,7 @@ class LinearClassifier(object):
     # TODO:                                                                   #
     # Implement this method. Store the predicted labels in y_pred.            #
     ###########################################################################
+    y_pred = np.argmax(np.dot(X, self.W), axis=1)
     pass
     ###########################################################################
     #                           END OF YOUR CODE                              #
