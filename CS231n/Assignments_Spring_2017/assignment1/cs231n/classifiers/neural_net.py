@@ -76,6 +76,8 @@ class TwoLayerNet(object):
     # Store the result in the scores variable, which should be an array of      #
     # shape (N, C).                                                             #
     #############################################################################
+    a1 = np.max(0, np.dot(X, W1) + b1)
+    scores = np.dot(a1, W2) + b2
     pass
     #############################################################################
     #                              END OF YOUR CODE                             #
@@ -93,6 +95,15 @@ class TwoLayerNet(object):
     # in the variable loss, which should be a scalar. Use the Softmax           #
     # classifier loss.                                                          #
     #############################################################################
+    scores_max = np.max(scores, axis=1, keepdims=True)  # (N, 1)
+    # Compute the class probabilities
+    exp_scores = np.exp(scores - scores_max)  #(N, C)
+    probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)  # (N, C)
+    # cross-entropy loss and L2-regularization
+    corrct_logprobs = -np.log(probs[range(N), y])  # (N, 1)
+    data_loss = np.sum(correct_logprobs) / N
+    reg_loss = 0.5 * reg * np.sum(W1, W1) + 0.5 * reg * np.sum(W2, W2)
+    loss = data_loss + reg_loss
     pass
     #############################################################################
     #                              END OF YOUR CODE                             #
@@ -105,6 +116,26 @@ class TwoLayerNet(object):
     # and biases. Store the results in the grads dictionary. For example,       #
     # grads['W1'] should store the gradient on W1, and be a matrix of same size #
     #############################################################################
+    dscores = probs # (N, C)
+    dscores[range(N), y] -= 1 
+    dscores /= N
+    # Backprop into W2 and b2
+    dW2 = np.dot(h1.T, dscores)  # (H, C)
+    db2 = np.sum(dscores, axis=0, keepdims=True)  # (1, C)
+    # Backprop into hidden layer
+    dh1 = np.dot(dscores, W2.T)   # (N, H)
+    # Backprop into ReLU non-linearity
+    dh1p[h1 <= 0] = 0
+    # Backpro into W1 and b1
+    dW1 = np.dot(X.T, dh1)
+    db1 = np.sum(dh1, axis=0, keepdims=True)  # (1, H)
+    # Add the regularization gradient contribution
+    dW2 += reg * W2
+    db1 += reg * W1
+    grads['W1'] = dW1
+    grads['b1'] = db1
+    grads['W2'] = dW2
+    grads['b2'] = db2
     pass
     #############################################################################
     #                              END OF YOUR CODE                             #
