@@ -18,6 +18,7 @@ def extract_features(imgs, feature_fns, verbose=False):
   - feature_fns: List of k feature functions. The ith feature function should
     take as input an H x W x D array and return a (one-dimensional) array of
     length F_i.
+    所有的特征向量合并为一行,最后组成的输入矩阵尺寸为: 样本数 * 特征向量 
   - verbose: Boolean; if true, print progress.
 
   Returns:
@@ -91,7 +92,7 @@ def hog_feature(im):
   if im.ndim == 3:
     image = rgb2gray(im)
   else:
-    image = np.at_least_2d(im)
+    image = np.at_least_2d(im)  # 至少是二维数组
 
   sx, sy = image.shape # image size
   orientations = 9 # number of gradient bins
@@ -99,10 +100,10 @@ def hog_feature(im):
 
   gx = np.zeros(image.shape)
   gy = np.zeros(image.shape)
-  gx[:, :-1] = np.diff(image, n=1, axis=1) # compute gradient on x-direction
-  gy[:-1, :] = np.diff(image, n=1, axis=0) # compute gradient on y-direction
-  grad_mag = np.sqrt(gx ** 2 + gy ** 2) # gradient magnitude
-  grad_ori = np.arctan2(gy, (gx + 1e-15)) * (180 / np.pi) + 90 # gradient orientation
+  gx[:, :-1] = np.diff(image, n=1, axis=1) # compute gradient on x-direction   实际上就是后一列减去前一列
+  gy[:-1, :] = np.diff(image, n=1, axis=0) # compute gradient on y-direction   实际上就是后一行减去前一行
+  grad_mag = np.sqrt(gx ** 2 + gy ** 2) # gradient magnitude 梯度大小
+  grad_ori = np.arctan2(gy, (gx + 1e-15)) * (180 / np.pi) + 90 # gradient orientation  梯度方向
 
   n_cellsx = int(np.floor(sx / cx))  # number of cells in x
   n_cellsy = int(np.floor(sy / cy))  # number of cells in y
@@ -117,9 +118,9 @@ def hog_feature(im):
                         temp_ori, 0)
     # select magnitudes for those orientations
     cond2 = temp_ori > 0
-    temp_mag = np.where(cond2, grad_mag, 0)
-    orientation_histogram[:,:,i] = uniform_filter(temp_mag, size=(cx, cy))[cx/2::cx, cy/2::cy].T
-  
+    temp_mag = np.where(cond2, grad_mag, 0)   # (32, 32)
+    orientation_histogram[:,:,i] = uniform_filter(temp_mag, size=cx)[cx//2::cx, cy//2::cy].T
+
   return orientation_histogram.ravel()
 
 

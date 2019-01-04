@@ -7,6 +7,8 @@ from past.builtins import xrange
 svm算法就是对于每一个样本，计算其他不正确分类与正确分类之间的差距，
 如果差距大于delta那就说明差距大，需要进行进一步优化，所以对于每个样本，
 把这些差距加起来，让他们尽量小，这个就是svm的核心思想。
+
+只有错误的分类才会产生loss
 '''
 def svm_loss_naive(W, X, y, reg):
   """

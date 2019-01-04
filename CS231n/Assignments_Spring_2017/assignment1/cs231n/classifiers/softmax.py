@@ -82,12 +82,13 @@ def softmax_loss_vectorized(W, X, y, reg):
   scores_max = np.reshape(scores_max, (num_train,1))
   prob = np.exp(scores - scores_max) / np.sum(np.exp(scores - scores_max), axis=1, keepdims=True)
   scores_corr = np.zeros_like(prob)  # N by C
-  scores_corr[np.arange(num_train), y] = 1.0
+  scores_corr[np.arange(num_train), y] = 1.0  # labels是onehot类型,仅在正确样本处取1
   
-  # 计算损失  y_trueClass是N*C维度  np.log(prob)也是N*C的维度
+  # 计算损失  scores_corr*C维度  np.log(prob)也是N*C的维度
+  # loss = -log(scores) = -y_i + log(sum(exp(scores)))
   loss += -np.sum(scores_corr * np.log(prob)) / num_train + 0.5 * reg * np.sum(W * W)
 
-  # 计算损失  X.T = (D*N)  y_truclass-prob = (N*C)
+  # 计算损失  X.T = (D*N)  scores_corr-prob = (N*C)
   dW += -np.dot(X.T, scores_corr - prob) / num_train + reg * W
 
   pass
