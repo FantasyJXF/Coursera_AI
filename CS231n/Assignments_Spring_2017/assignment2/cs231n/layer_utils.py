@@ -15,9 +15,9 @@ def affine_relu_forward(x, w, b):
     - out: Output from the ReLU
     - cache: Object to give to the backward pass
     """
-    a, fc_cache = affine_forward(x, w, b)
+    a, fc_cache = affine_forward(x, w, b)  # a:(N,M)
     out, relu_cache = relu_forward(a)
-    cache = (fc_cache, relu_cache)
+    cache = (fc_cache, relu_cache)  # ((x, w, b), a)
     return out, cache
 
 

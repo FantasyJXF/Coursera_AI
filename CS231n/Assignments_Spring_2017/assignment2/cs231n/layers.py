@@ -1,3 +1,5 @@
+# -*- coding:utf-8 -*-
+
 from builtins import range
 import numpy as np
 
@@ -81,6 +83,7 @@ def relu_forward(x):
     ###########################################################################
     # TODO: Implement the ReLU forward pass.                                  #
     ###########################################################################
+    out = np.maximum(0, x)
     pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -104,6 +107,8 @@ def relu_backward(dout, cache):
     ###########################################################################
     # TODO: Implement the ReLU backward pass.                                 #
     ###########################################################################
+    dx = dout
+    dx[x<=0] = 0
     pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -553,7 +558,7 @@ def softmax_loss(x, y):
     - loss: Scalar giving the loss
     - dx: Gradient of the loss with respect to x
     """
-    shifted_logits = x - np.max(x, axis=1, keepdims=True)
+    shifted_logits = x - np.max(x, axis=1, keepdims=True)  # 减去每一行的最大值
     Z = np.sum(np.exp(shifted_logits), axis=1, keepdims=True)
     log_probs = shifted_logits - np.log(Z)
     probs = np.exp(log_probs)
