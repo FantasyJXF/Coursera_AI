@@ -179,6 +179,13 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # variance, storing your result in the running_mean and running_var   #
         # variables.                                                          #
         #######################################################################
+        x_mean = x.mean(axis=0)
+        x_var = x.var(axis=0)
+        x_norm = (x - x_mean) / np.sqrt(x_var + eps)
+        out = gamma * x_norm + beta
+        cache = (x, x_mean, x_var, x_norm, beta, gamma, eps)
+        running_mean = momentum * running_mean + (1 - momentum) * x_mean
+        running_var = momentum * running_var + (1 - momentum) * x_var
         pass
         #######################################################################
         #                           END OF YOUR CODE                          #
@@ -190,6 +197,8 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # then scale and shift the normalized data using gamma and beta.      #
         # Store the result in the out variable.                               #
         #######################################################################
+        x_norm = (x - running_mean) / np.sqrt(running_var + eps)
+        out = gamma * x_norm + beta
         pass
         #######################################################################
         #                          END OF YOUR CODE                           #
@@ -226,6 +235,15 @@ def batchnorm_backward(dout, cache):
     # TODO: Implement the backward pass for batch normalization. Store the    #
     # results in the dx, dgamma, and dbeta variables.                         #
     ###########################################################################
+    (x, x_mean, x_var, x_norm, beta, gamma, eps) = cache
+    N = x.shape[0]
+    dbeta = np.sum(dout, axis=0)
+    dgamma = np.sum(x_norm * dout, axis = 0)
+    dx_norm = gamma * dout
+    dx_var = np.sum(-1.0 / 2 * dx_norm * (x - x_mean) / (x_va + eps)**(3.0 / 2), axis =0)
+    dx_mean = np.sum(-1 / np.sqrt(x_var + eps) * dx_norm, axis = 0) + \
+              1.0 / N * dx_var * np.sum(-2 * (x - x_mean), axis = 0)
+    dx = 1 / np.sqrt(x_var + eps) * dx_norm + dx_var * 2.0 / N * (x - x_mean) + 1.0 / N * dx_mean
     pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
