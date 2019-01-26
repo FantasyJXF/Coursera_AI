@@ -177,17 +177,21 @@ class FullyConnectedNet(object):
         # beta2, etc. Scale parameters should be initialized to one and shift      #
         # parameters should be initialized to zero.                                #
         ############################################################################
-        self.params['W1'] = weight_scale * np.random.randn((input_dim, hidden_dims))
-        self.params['b1'] = np.zeros((input_dim, hidden_dims))
-        self.params['W2'] = np.random.randn((hidden_dims, num_classes))
-        self.params['b2'] = np.zeros((hidden_dims, num_classes))
-
-        # if self.use_batchnorm:
-        #     self.bn_params['gamma1'] = 1.0
-        #     self.bn_params['beta1'] = 0.0
-        #     self.bn_params['gamma2'] = 1.0
-        #     self.bn_params['beta2'] = 0.0
-        # pass
+        for i in range(len(hidden_dims)):
+            if 0 == i:
+                dim_prev = input_dim
+                dim_post = hidden_dims[i]
+            elif len(hidden_dims) - 1 == i:
+                dim_prev = hidden_dims[i-1]
+                dim_post = num_classes
+            else:
+                dim_prev = hidden_dims[i-1]
+                dim_post = hidden_dims[i]
+            self.params['W'+str(i+1)] = weight_scale * np.random.randn((dim_pre, dim_post))
+            self.params['b'+str(i+1)] = np.zeros(dim_post)
+                
+        if self.use_batchnorm:
+            self.bn_params = [{'gamma'+str(i+1):1.0, 'beta'+str(i+1):0} for i in range(self.hidden_dims)]
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -245,13 +249,17 @@ class FullyConnectedNet(object):
         # self.bn_params[1] to the forward pass for the second batch normalization #
         # layer, etc.                                                              #
         ############################################################################
-        #for layer in range(self.num_layers - 1):
-        h1, cache1 = affine_forward(X, self.params['W1'], self.params['b1'])
-        if self.use_batchnorm:
-            h1, cache2 = batchnorm_forward(x, gamma, beta, bn_param)
-        a2, cache3 = relu_forward(h1)
-        if self.use_dropout:
+        step_forwards = self.num_layers - 1
+        for i in range(step_forwards -1):
+            x_input = X
+            z, cache1 = affine_forward(x_input, self.params['W'+str(i+1)], self.params['b'+str(i+1)])
+            if self.use_batchnorm:
+                z, cache2 = batchnorm_forward(z, bn_params[i]['gamma1'], bn_params[i]['beta1'], bn_params[i])
+            a, cache3 = relu_forward(z)
+            if self.use_dropout:
+                a, cache4 = dropout_forward(a, dropout_param)
             
+        a_out = affine_forward(a, self.params['W'+str(step_forwards)], self.params['b'+str(step_forwards)])
         pass
         ############################################################################
         #                             END OF YOUR CODE                             #
