@@ -177,21 +177,24 @@ class FullyConnectedNet(object):
         # beta2, etc. Scale parameters should be initialized to one and shift      #
         # parameters should be initialized to zero.                                #
         ############################################################################
+        #初始化（L-1）个隐藏层的权值、偏置、batchnor
         for i in range(len(hidden_dims)):
             if 0 == i:
                 dim_prev = input_dim
                 dim_post = hidden_dims[i]
-            elif len(hidden_dims) - 1 == i:
-                dim_prev = hidden_dims[i-1]
-                dim_post = num_classes
             else:
                 dim_prev = hidden_dims[i-1]
                 dim_post = hidden_dims[i]
-            self.params['W'+str(i+1)] = weight_scale * np.random.randn((dim_pre, dim_post))
-            self.params['b'+str(i+1)] = np.zeros(dim_post)
-                
-        if self.use_batchnorm:
-            self.bn_params = [{'gamma'+str(i+1):1.0, 'beta'+str(i+1):0} for i in range(self.hidden_dims)]
+            self.params['W'+str(i+1)] = weight_scale * np.random.randn(dim_prev, dim_post)
+            self.params['b'+str(i+1)] = np.zeros(dim_post)      
+            
+            if self.use_batchnorm:
+                self.params['gamma'+str(i+1)] = np.ones(dim_post)
+                self.params['beta'+str(i+1)] = np.zeros(dim_post)
+
+        #初始化输出层的权值、偏置
+        self.params['W'+str(self.num_layers)] = weight_scale * np.random.randn(dim_post, num_classes)
+        self.params['b'+str(self.num_layers)] = np.zeros(num_classes)      
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -249,18 +252,51 @@ class FullyConnectedNet(object):
         # self.bn_params[1] to the forward pass for the second batch normalization #
         # layer, etc.                                                              #
         ############################################################################
-        step_forwards = self.num_layers - 1
-        for i in range(step_forwards -1):
-            x_input = X
-            z, cache1 = affine_forward(x_input, self.params['W'+str(i+1)], self.params['b'+str(i+1)])
+        #计算scores
+        num_hiddenlayers = self.num_layers - 1
+        caches = {} #记录各层每一级的cache，如第一层：“affine:cache11,batchnorm:cache12....."
+        z={} #记录各层每一级的输出结果，如第一层：“affine:z11,batchnorm:z12....."
+        #初始化网络输入值
+        stringz_last="input"
+        z[stringz_last] = X
+        for i in range(num_hiddenlayers):
+            # 当前层的第一个步骤: affine_forward
+            stringz = "z" + str(i+1) + str(1)
+            stringc = "cache" + str(i+1) + str(1)
+            z[stringz], caches[stringc] = affine_forward(z[stringz_last], self.params['W'+str(i+1)], self.params['b'+str(i+1)])
+            stringz_last = stringz
+
+            # 当前层的第二个步骤[Optional]: batchnorm_forward
             if self.use_batchnorm:
-                z, cache2 = batchnorm_forward(z, bn_params[i]['gamma1'], bn_params[i]['beta1'], bn_params[i])
-            a, cache3 = relu_forward(z)
-            if self.use_dropout:
-                a, cache4 = dropout_forward(a, dropout_param)
+                gamma = self.params['gamma' + str(i+1)]
+                beta = self.params['beta' + str(i+1)]
+                stringz = 'z' + str(i+1) + str(2)
+                stringc = 'cache' + str(i+1) + str(2)
+                z[stringz], caches[stringc] = batchnorm_forward(z[stringz_last], gamma, beta, self.bn_params[i])
+                stringz_last = stringz
             
-        a_out = affine_forward(a, self.params['W'+str(step_forwards)], self.params['b'+str(step_forwards)])
-        pass
+            # 当前层的第三个步骤: relu_forward
+            stringz = "z" + str(i+1) + str(3)
+            stringc = "cache" + str(i+1) + str(3)
+            z[stringz], caches[stringc] = relu_forward(z[stringz_last])
+            stringz_last = stringz
+
+            # 当前层的第四个步骤[Optional]: dropout_forward
+            if self.use_dropout:
+                stringz = "z" + str(i+1) + str(4)
+                stringc = "cache" + str(i+1) + str(4)
+                z[stringz], caches[stringc] = dropout_forward(z[stringz_last], self.dropout_param)
+                stringz_last = stringz
+        #循环隐藏层结束
+
+        #最后一个隐藏层，affine_forward + softmax_loss：
+        stringc = 'cache' + '_out'
+        stringz = 'z' + '_out'
+        z[stringz], caches[stringc] = affine_forward(z[stringz_last], 
+                                                     self.params['W' + str(self.num_layers)], 
+                                                     self.params['b' + str(self.num_layers)])
+        scores = z['z_out']
+        #pass
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -283,7 +319,58 @@ class FullyConnectedNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
-        pass
+        #反向传播
+        dz = {} #记录反向传播的中间值
+        #计算loss
+        loss_without_reg, dz['dz_out'] = softmax_loss(scores, y)
+    
+        for i in range(self.num_layers): 
+            loss += 0.5* np.sum(np.square(self.params['W' + str(i+1)]))
+        loss = loss + loss_without_reg
+        
+        #计算grads
+        #最后一层affine反向传播并更新梯度
+        stringW = 'W' + str(self.num_layers)
+        stringb = 'b' + str(self.num_layers)
+        stringdz = 'dz' + str(self.num_layers) + str(4)
+        dz[stringdz], grads[stringW], grads[stringb] = affine_backward(dz['dz_out'], caches['cache_out'])
+        grads[stringW] += self.reg * caches['cache_out'][1]
+        stringdz_last = stringdz
+
+        #（L-1)层隐藏层反向传播并更新梯度
+        for i in range(num_hiddenlayers, 0, -1): 
+            #dropout级反向
+            if self.use_dropout:
+                stringdz = 'dz' + str(i) + str(3)
+                stringc = 'cache' + str(i) + str(4)
+                dz[stringdz] = dropout_backward(dz[stringdz_last], caches[stringc])
+                stringdz_last = stringdz
+            #relu级反向
+            stringdz = 'dz' + str(i) + str(2)
+            stringc = 'cache' + str(i) + str(3)
+            if not stringc in caches:
+                stringc = 'cache' + str(i) + str(4)
+            dz[stringdz] = relu_backward(dz[stringdz_last], caches[stringc])
+            stringdz_last = stringdz
+            #batchnorm级反向并更新梯度
+            if self.use_batchnorm:
+                stringdz = 'dz' + str(i) + str(1)
+                stringc = 'cache' + str(i) + str(2)
+                stringg = 'gamma' + str(i)
+                stringbe = 'beta' + str(i)
+                dz[stringdz],grads[stringg],grads[stringbe] = batchnorm_backward(dz[stringdz_last], caches[stringc])
+                stringdz_last = stringdz
+            #affine级反向并更新梯度
+            stringdz = 'dz' + str(i) + str(4)
+            stringc = 'cache' + str(i) + str(1)
+            if not stringc in caches:
+                stringc = 'cache' + str(i) + str(2)
+            stringW = 'W' + str(i)
+            stringb = 'b' + str(i)
+            dz[stringdz],grads[stringW], grads[stringb] = affine_backward(dz[stringdz_last], caches[stringc])
+            grads[stringW] += self.reg * caches[stringc][1]
+            stringdz_last = stringdz
+        #pass
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
