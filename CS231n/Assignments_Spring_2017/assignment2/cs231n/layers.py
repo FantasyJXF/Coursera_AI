@@ -392,19 +392,12 @@ def conv_forward_naive(x, w, b, conv_param):
     H_out = 1 + (H + 2 * pad - HH) // stride
     W_out = 1 + (W + 2 * pad - WW) // stride
     out = np.ones((N,F,H_out,W_out))
+    s = stride
     for n in range(N):
       for f in range(F):
-        for i in range(0, H_out, stride):
-          for j in range(0, W_out, stride):
-            out[n][f][i][j] = np.sum(x_padded[n,:,
-                                     i*stride : HH+i*stride, 
-                                     j*stride : j*stride+WW] * w[f]) + b[f]
-        #     for c in range(C):
-        #       mask = x_padded[n, c, i:i+HH, j:j+WW]
-        #       filter = w[f,c]
-        #       out[n, f, i, j] += np.sum(np.multiply(mask, filter))
-        # out[n, f, i, j] += b[f]
-    #pass
+        for i in range(H_out):
+          for j in range(W_out):
+            out[n, f, i, j] = np.sum(x_padded[n, :, i*s : HH + i*s, j*s : j*s + WW] * w[f]) + b[f]
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
